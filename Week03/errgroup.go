@@ -13,14 +13,16 @@ import (
 
 func main() {
 	g, ctx := errgroup.WithContext(context.Background())
-	exit := make(chan os.Signal)
+	s := http.Server{Addr: "127.0.0.0:8000", Handler: nil}
 	g.Go(func() error {
-		if err := http.ListenAndServe("127.0.0.0:8000", nil); err != nil {
-			return err
-		}
-		return nil
+		go func() {
+			<-ctx.Done()
+			s.Shutdown(context.Background())
+		}()
+		return s.ListenAndServe()
 	})
 
+	exit := make(chan os.Signal)
 	g.Go(func() error {
 		signal.Notify(exit)
 		select {
